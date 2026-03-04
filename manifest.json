@@ -1,0 +1,38 @@
+{
+    "format_version": 2,
+    "header": {
+        "name": "terrain",
+        "description": "des",
+        "uuid": "5b427532-c48c-4f51-865f-5f4f15cb7530",
+        "version": [
+            1,
+            0,
+            10
+        ],
+        "min_engine_version": [
+            1,
+            26,
+            1
+        ]
+    },
+    "modules": [
+        {
+            "type": "script",
+            "description": "",
+            "uuid": "27739c3d-d205-4d80-920c-c2efd9a8c89f",
+            "version": [
+                1,
+                0,
+                0
+            ],
+            "language": "javascript",
+            "entry": "scripts/index.js"
+        }
+    ],
+    "dependencies": [
+        {
+            "module_name": "@minecraft/server",
+            "version": "2.5.0"
+        }
+    ]
+}
