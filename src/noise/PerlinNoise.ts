@@ -1,10 +1,11 @@
 import { RandomNumberGenerator } from "@/random/RandomNumberGenerator";
 import { IntRange } from "@/range/IntRange";
-import { NoiseGenerationOptions } from "./NoiseGenerationOptions";
-import { Vector3, VectorXZ } from "@minecraft/server";
+import { Vector2, Vector3 } from "@minecraft/server";
 import { Vector3Builder } from "@/vector/Vector3Builder";
 import { CubeLattice } from "./CubeLattice";
 import { CubeCorners } from "./CubeCorners";
+import { NoiseGenerationOptions } from "./NoiseGenerationOptions";
+import { OctavedNoiseGenerationOptions } from "./OctavedNoiseGenerationOptions";
 
 export class PerlinNoise {
     private readonly offset: Vector3;
@@ -59,12 +60,43 @@ export class PerlinNoise {
         return options.amplitude * PerlinNoise.trilinear(fadedVector, impactValues);
     }
 
-    public noise2(v: VectorXZ, options: NoiseGenerationOptions): number {
-        return this.noise3(Object.assign(v, { y: 0 }), options);
+    public noise2(v: Vector2, options: NoiseGenerationOptions): number {
+        return this.noise3({ x: v.x, y: v.y, z: 0 }, options);
     }
 
     public noise1(v: number, options: NoiseGenerationOptions): number {
-        return this.noise2({ x: v, z: 0 }, options);
+        return this.noise2({ x: v, y: 0 }, options);
+    }
+
+    public noise3Octaved(v: Vector3, options: OctavedNoiseGenerationOptions): number {
+        let total = 0;
+        let maxAmplitude = 0;
+
+        let currentFrequency = options.frequency;
+        let currentAmplitude = options.amplitude;
+
+        for (let i = 0; i < options.octaves; i++) {
+            total += this.noise3(v, {
+                frequency: currentFrequency,
+                amplitude: currentAmplitude
+            });
+
+            maxAmplitude += currentAmplitude;
+
+            currentAmplitude *= options.persistence;
+            currentFrequency *= options.lacunarity;
+        }
+
+        // 正規化（-1〜1を維持したいなら）
+        return total / maxAmplitude;
+    }
+
+    public noise2Octaved(v: Vector2, options: OctavedNoiseGenerationOptions): number {
+        return this.noise3Octaved({ x: v.x, y: v.y, z: 0 }, options);
+    }
+
+    public noise1Octaved(v: number, options: OctavedNoiseGenerationOptions): number {
+        return this.noise2Octaved({ x: v, y: 0 }, options);
     }
 
     private static fade(x: number): number {
