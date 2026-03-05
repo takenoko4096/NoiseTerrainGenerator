@@ -21,4 +21,3 @@ system.runInterval(() => {
         world.getDimension(MinecraftDimensionTypes.Overworld).spawnParticle("minecraft:basic_flame_particle", { x, y, z: 0 });
     }
 }, 10);
-

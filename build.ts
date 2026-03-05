@@ -21,7 +21,8 @@ const output = await bun.build({
         "@minecraft/debug-utilities",
         "@minecraft/diagnostics",
         "@minecraft/common"
-    ]
+    ],
+    minify: true
 });
 
 const manifest = new minecraft.ManifestJson(import.meta, "manifest.json");
