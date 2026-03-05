@@ -1,6 +1,6 @@
 import { Vector3Builder } from "@/vector/Vector3Builder";
-import { Vector3 } from "@minecraft/server";
 import { CubeCorners } from "./CubeCorners";
+import { Vector3 } from "@/vector/Vector3";
 
 export class CubeLattice {
     private static readonly GRADIENT_VECTORS: Vector3[] = [

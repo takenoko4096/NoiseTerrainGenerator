@@ -1,12 +1,12 @@
 import { RandomNumberGenerator } from "@/random/RandomNumberGenerator";
 import { IntRange } from "@/range/IntRange";
-import { Vector2, Vector3 } from "@minecraft/server";
 import { Vector3Builder } from "@/vector/Vector3Builder";
 import { CubeLattice } from "./CubeLattice";
 import { CubeCorners } from "./CubeCorners";
 import { NoiseGenerationOptions } from "./NoiseGenerationOptions";
 import { OctavedNoiseGenerationOptions } from "./OctavedNoiseGenerationOptions";
 import { VectorXZ } from "@/vector/VectorXZ";
+import { Vector3 } from "@/vector/Vector3";
 
 export class PerlinNoise {
     private readonly offset: Vector3;
