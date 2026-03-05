@@ -1,27 +1,24 @@
 import { BlockVolume, Dimension } from "@minecraft/server";
 import { NumberRange } from "@minecraft/common";
 import { Vector3Builder } from "@/vector/Vector3Builder";
-import { NoiseGenerationOptions } from "@/noise/NoiseGenerationOptions";
 import { VectorXZ } from "@/vector/VectorXZ";
 import { MinecraftBlockTypes } from "@minecraft/vanilla-data";
 
-export interface TerrainGenerationOptions extends NoiseGenerationOptions {
-    seed: number;
-
-    terrainHeightRange: NumberRange;
-
-    referenceAltitude?: number;
-}
-
 export class Chunk {
+    public readonly dimension: Dimension;
+
     public readonly northWest: VectorXZ;
 
-    public readonly dimension: Dimension;
+    public readonly center: VectorXZ;
 
     private constructor(dimension: Dimension, location: VectorXZ) {
         this.dimension = dimension;
-        this.northWest = Vector3Builder.from({ x: location.x, y: 0, z: location.z })
-            .operate(c => Math.floor(c / 16) * 16);
+        this.northWest = Vector3Builder.from(location).operate(component => Math.floor(component / 16) * 16);
+        this.center = { x: this.northWest.x + 8, z: this.northWest.z + 8 };
+    }
+
+    public relativePosition(): VectorXZ {
+        return Vector3Builder.from(this.northWest).operate(component => Math.floor(component / 16));
     }
 
     public *getBlockIterator(callbackFn: (location: VectorXZ, done: boolean) => void): Generator<void, void, void> {
@@ -31,37 +28,26 @@ export class Chunk {
 
         for (x = maxX; x >= this.northWest.x; x--) {
             for (z = maxZ; z >= this.northWest.z; z--) {
-                let done: boolean = false;
-
-                if (x === this.northWest.x && z === this.northWest.z) {
-                    done = true;
-                }
-
-                callbackFn({ x, z }, done);
-
+                callbackFn({ x, z }, x === this.northWest.x && z === this.northWest.z);
                 if (z % 4 === 0) yield;
             }
             yield;
         }
     }
 
-    public *getCleaner(heightRange: NumberRange): Generator<void, void, void> {
+    public *clearer(height: NumberRange): Generator<void, void, void> {
         let x: number;
         const maxX = this.northWest.x + 15;
-        const rangeZ = { min: this.northWest.z, max: this.northWest.z + 15 };
+        const rangeZ: NumberRange = { min: this.northWest.z, max: this.northWest.z + 15 };
 
         for (x = maxX; x >= this.northWest.x; x--) {
             this.dimension.fillBlocks(
-                new BlockVolume({ x, y: heightRange.min, z: rangeZ.min }, { x, y: heightRange.max, z: rangeZ.max }),
+                new BlockVolume({ x, y: height.min, z: rangeZ.min }, { x, y: height.max, z: rangeZ.max }),
                 MinecraftBlockTypes.Air
             );
 
             if (x % 4 === 0) yield;
         }
-    }
-
-    public getCenterPos(): VectorXZ {
-        return { x: this.northWest.x + 8, z: this.northWest.z + 8 };
     }
 
     public equals(other: Chunk): boolean {
@@ -82,30 +68,34 @@ export class Chunk {
     }
 
     public north(): Chunk {
-        return Chunk.getChunkAt(this.dimension, { x: this.northWest.x, z: this.northWest.z - 1 });
+        return Chunk.at(this.dimension, { x: this.northWest.x, z: this.northWest.z - 1 });
     }
 
     public south(): Chunk {
-        return Chunk.getChunkAt(this.dimension, { x: this.northWest.x, z: this.northWest.z + 16 });
+        return Chunk.at(this.dimension, { x: this.northWest.x, z: this.northWest.z + 16 });
     }
 
     public east(): Chunk {
-        return Chunk.getChunkAt(this.dimension, { x: this.northWest.x + 16, z: this.northWest.z });
+        return Chunk.at(this.dimension, { x: this.northWest.x + 16, z: this.northWest.z });
     }
 
     public west(): Chunk {
-        return Chunk.getChunkAt(this.dimension, { x: this.northWest.x - 1, z: this.northWest.z });
+        return Chunk.at(this.dimension, { x: this.northWest.x - 1, z: this.northWest.z });
     }
 
-    public static getChunkAt(dimension: Dimension, location: VectorXZ): Chunk {
+    public toString(): string {
+        const rel = this.relativePosition();
+        return `Chunk(${this.dimension.id})[${rel.x}, ${rel.z}]`;
+    }
+
+    public static at(dimension: Dimension, location: VectorXZ): Chunk {
         return new Chunk(dimension, location);
     }
 
-    public static getChunksInCircle(dimension: Dimension, center: VectorXZ, radius: number): Set<Chunk> {
-        const centerChunk = Chunk.getChunkAt(dimension, center);
-        const centerPosOfCenterChunk = centerChunk.getCenterPos();
+    public static inCircle(dimension: Dimension, center: Chunk, radius: number): Set<Chunk> {
+        const centerPosOfCenterChunk = center.center;
 
-        const chunks: Chunk[] = [];
+        const chunks = new Set<Chunk>();
 
         const maxX = centerPosOfCenterChunk.x + radius;
         const minX = centerPosOfCenterChunk.x - radius;
@@ -117,13 +107,14 @@ export class Chunk {
 
         for (x = maxX; x >= minX; x -= 16) {
             for (z = maxZ; z >= minZ; z -= 16) {
-                chunks.push(Chunk.getChunkAt(dimension, { x, z }));
+                const chunk = Chunk.at(dimension, { x, z });
+
+                if (Vector3Builder.from(chunk.center).getDistanceTo(Vector3Builder.from(centerPosOfCenterChunk)) <= radius) {
+                    chunks.add(chunk);
+                }
             }
         }
 
-        return new Set(chunks.filter(chunk => {
-            return Vector3Builder.from(chunk.getCenterPos(), 0).getDistanceTo(Vector3Builder.from(centerPosOfCenterChunk, 0)) <= radius
-                && chunk.isLoaded()
-        }));
+        return chunks;
     }
 }

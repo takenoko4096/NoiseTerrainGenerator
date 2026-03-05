@@ -25,7 +25,7 @@ export class PerlinNoise {
         }
     }
 
-    public noise3(v: Vector3, options: NoiseGenerationOptions): number {
+    public noise3Simple(v: Vector3, options: NoiseGenerationOptions): number {
         // 入力の修正
         const vector = Vector3Builder.from(v)
             .scale(options.frequency)
@@ -43,7 +43,7 @@ export class PerlinNoise {
         const gradients = lattice.getGradientVectors(this.permutation);
 
         // 最終的な影響値の算出
-        const impactValues = {
+        const impactValues: CubeCorners<number> = {
             $000: offsets.$000.dot(gradients.$000),
             $001: offsets.$001.dot(gradients.$001),
             $010: offsets.$010.dot(gradients.$010),
@@ -60,12 +60,12 @@ export class PerlinNoise {
         return options.amplitude * PerlinNoise.trilinear(fadedVector, impactValues);
     }
 
-    public noise2(v: Vector2, options: NoiseGenerationOptions): number {
-        return this.noise3({ x: v.x, y: v.y, z: 0 }, options);
+    public noise2Simple(v: Vector2, options: NoiseGenerationOptions): number {
+        return this.noise3Simple({ x: v.x, y: v.y, z: 0 }, options);
     }
 
-    public noise1(v: number, options: NoiseGenerationOptions): number {
-        return this.noise2({ x: v, y: 0 }, options);
+    public noise1Simple(v: number, options: NoiseGenerationOptions): number {
+        return this.noise2Simple({ x: v, y: 0 }, options);
     }
 
     public noise3Octaved(v: Vector3, options: OctavedNoiseGenerationOptions): number {
@@ -76,7 +76,7 @@ export class PerlinNoise {
         let currentAmplitude = options.amplitude;
 
         for (let i = 0; i < options.octaves; i++) {
-            total += this.noise3(v, {
+            total += this.noise3Simple(v, {
                 frequency: currentFrequency,
                 amplitude: currentAmplitude
             });
@@ -87,8 +87,8 @@ export class PerlinNoise {
             currentFrequency *= options.lacunarity;
         }
 
-        // 正規化（-1〜1を維持したいなら）
-        return total / maxAmplitude;
+        // 正規化 -> *amplitude
+        return options.amplitude * total / maxAmplitude;
     }
 
     public noise2Octaved(v: Vector2, options: OctavedNoiseGenerationOptions): number {

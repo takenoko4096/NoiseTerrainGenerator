@@ -16,7 +16,7 @@
         "allowUnreachableCode": false,
         "noImplicitReturns": true,
         "noUnusedParameters": true,
-        "noUnusedLocals": true,
+        //"noUnusedLocals": true,
         "noUncheckedIndexedAccess": true,
         "noFallthroughCasesInSwitch": false,
         "noPropertyAccessFromIndexSignature": false,
