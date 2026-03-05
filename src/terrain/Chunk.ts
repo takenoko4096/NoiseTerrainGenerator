@@ -3,6 +3,7 @@ import { NumberRange } from "@minecraft/common";
 import { Vector3Builder } from "@/vector/Vector3Builder";
 import { VectorXZ } from "@/vector/VectorXZ";
 import { MinecraftBlockTypes } from "@minecraft/vanilla-data";
+import { PerlinNoise } from "@/noise/PerlinNoise";
 
 export class Chunk {
     public readonly dimension: Dimension;
@@ -30,6 +31,28 @@ export class Chunk {
             for (z = maxZ; z >= this.northWest.z; z--) {
                 callbackFn({ x, z }, x === this.northWest.x && z === this.northWest.z);
                 if (z % 4 === 0) yield;
+            }
+            yield;
+        }
+    }
+
+    public *getTerrainGenerator(perlinNoise: PerlinNoise): Generator<void, void, void> {
+        let x: number, z: number;
+        const maxX = this.northWest.x + 15;
+        const maxZ = this.northWest.z + 15;
+
+        for (x = maxX; x >= this.northWest.x; x--) {
+            for (z = maxZ; z >= this.northWest.z; z--) {
+                const y = perlinNoise.noise2Simple({ x, z }, {
+                    amplitude: 7,
+                    frequency: 0.05,
+                });
+                this.dimension.fillBlocks(
+                    new BlockVolume({ x, y: -15, z }, { x, y: 15, z }),
+                    MinecraftBlockTypes.Air
+                );
+                this.dimension.setBlockType({ x, y, z }, MinecraftBlockTypes.Stone);
+                if (z % 11 === 0) yield;
             }
             yield;
         }
@@ -83,6 +106,30 @@ export class Chunk {
         return Chunk.at(this.dimension, { x: this.northWest.x - 1, z: this.northWest.z });
     }
 
+    public around(size: number): Set<Chunk> {
+        size *= 16;
+
+        const centerPosOfCenterChunk = this.center;
+
+        const chunks = new Set<Chunk>();
+
+        const maxX = centerPosOfCenterChunk.x + size;
+        const minX = centerPosOfCenterChunk.x - size;
+
+        const maxZ = centerPosOfCenterChunk.z + size;
+        const minZ = centerPosOfCenterChunk.z - size;
+
+        let x: number, z: number;
+
+        for (x = maxX; x >= minX; x -= 16) {
+            for (z = maxZ; z >= minZ; z -= 16) {
+                chunks.add(Chunk.at(this.dimension, { x, z }))
+            }
+        }
+
+        return chunks;
+    }
+
     public toString(): string {
         const rel = this.relativePosition();
         return `Chunk(${this.dimension.id})[${rel.x}, ${rel.z}]`;
@@ -90,31 +137,5 @@ export class Chunk {
 
     public static at(dimension: Dimension, location: VectorXZ): Chunk {
         return new Chunk(dimension, location);
-    }
-
-    public static inCircle(dimension: Dimension, center: Chunk, radius: number): Set<Chunk> {
-        const centerPosOfCenterChunk = center.center;
-
-        const chunks = new Set<Chunk>();
-
-        const maxX = centerPosOfCenterChunk.x + radius;
-        const minX = centerPosOfCenterChunk.x - radius;
-
-        const maxZ = centerPosOfCenterChunk.z + radius;
-        const minZ = centerPosOfCenterChunk.z - radius;
-
-        let x: number, z: number;
-
-        for (x = maxX; x >= minX; x -= 16) {
-            for (z = maxZ; z >= minZ; z -= 16) {
-                const chunk = Chunk.at(dimension, { x, z });
-
-                if (Vector3Builder.from(chunk.center).getDistanceTo(Vector3Builder.from(centerPosOfCenterChunk)) <= radius) {
-                    chunks.add(chunk);
-                }
-            }
-        }
-
-        return chunks;
     }
 }

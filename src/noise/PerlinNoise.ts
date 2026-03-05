@@ -6,6 +6,7 @@ import { CubeLattice } from "./CubeLattice";
 import { CubeCorners } from "./CubeCorners";
 import { NoiseGenerationOptions } from "./NoiseGenerationOptions";
 import { OctavedNoiseGenerationOptions } from "./OctavedNoiseGenerationOptions";
+import { VectorXZ } from "@/vector/VectorXZ";
 
 export class PerlinNoise {
     private readonly offset: Vector3;
@@ -60,12 +61,12 @@ export class PerlinNoise {
         return options.amplitude * PerlinNoise.trilinear(fadedVector, impactValues);
     }
 
-    public noise2Simple(v: Vector2, options: NoiseGenerationOptions): number {
-        return this.noise3Simple({ x: v.x, y: v.y, z: 0 }, options);
+    public noise2Simple(v: VectorXZ, options: NoiseGenerationOptions): number {
+        return this.noise3Simple({ x: v.x, y: 0, z: v.z }, options);
     }
 
     public noise1Simple(v: number, options: NoiseGenerationOptions): number {
-        return this.noise2Simple({ x: v, y: 0 }, options);
+        return this.noise2Simple({ x: v, z: 0 }, options);
     }
 
     public noise3Octaved(v: Vector3, options: OctavedNoiseGenerationOptions): number {
@@ -91,12 +92,12 @@ export class PerlinNoise {
         return options.amplitude * total / maxAmplitude;
     }
 
-    public noise2Octaved(v: Vector2, options: OctavedNoiseGenerationOptions): number {
-        return this.noise3Octaved({ x: v.x, y: v.y, z: 0 }, options);
+    public noise2Octaved(v: VectorXZ, options: OctavedNoiseGenerationOptions): number {
+        return this.noise3Octaved({ x: v.x, y: 0, z: v.z }, options);
     }
 
     public noise1Octaved(v: number, options: OctavedNoiseGenerationOptions): number {
-        return this.noise2Octaved({ x: v, y: 0 }, options);
+        return this.noise2Octaved({ x: v, z: 0 }, options);
     }
 
     private static fade(x: number): number {
@@ -122,14 +123,3 @@ export class PerlinNoise {
         return PerlinNoise.linear(t.z, y0, y1);
     }
 }
-
-/*
-function fastGradient(hash: number, x: number, y: number, z: number): number {
-    hash &= 15;
-
-    const u = hash < 8 ? x : y;
-    const v = hash < 4 ? y : (hash !== 12 && hash !== 14 ? z : x);
-
-    return ((hash & 1) === 0 ? u : -u) + ((hash & 2) === 0 ? v : -v);
-}
-*/
