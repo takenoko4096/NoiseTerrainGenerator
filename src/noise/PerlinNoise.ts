@@ -38,7 +38,7 @@ export class PerlinNoise {
         // 単位立方体格子の生成
         const lattice = new CubeLattice(chunkMinVector);
 
-        // 単位立方体格子の各頂点の座標 から 入力ローカル座標をフェードした座標 へのベクトルを取得
+        // 単位立方体格子の各頂点の座標から入力ローカル座標へのベクトルを取得
         const offsets = lattice.getOffsetVectors(vector);
         // 単位立方体格子の各頂点に対応する勾配ベクトルを取得
         const gradients = lattice.getGradientVectors(this.permutation);
